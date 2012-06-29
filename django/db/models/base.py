@@ -268,22 +268,31 @@ class ModelState(object):
     """
     A class for storing instance state
     """
-    def __init__(self, db=None):
+    def __init__(self, db=None, adding=True):
         self.db = db
         # If true, uniqueness validation checks will consider this a new, as-yet-unsaved object.
         # Necessary for correct validation of new instances of objects with explicit (non-auto) PKs.
         # This impacts validation only; it has no effect on the actual save.
-        self.adding = True
+        self.adding = adding
 
 class Model(object):
     __metaclass__ = ModelBase
     _deferred = False
 
+    def __new__(cls, db=None, adding=True, *args, **kwargs):
+        ret = super(Model, cls).__new__(cls)
+        ret._state = ModelState(db, adding)
+        return ret
+
+    @classmethod
+    def construct(cls, db, adding, *args, **kwargs):
+        self = cls.__new__(cls, db, adding, *args, **kwargs)
+        return self.__init__(*args, **kwargs)
+
     def __init__(self, *args, **kwargs):
         signals.pre_init.send(sender=self.__class__, args=args, kwargs=kwargs)
 
         # Set up the storage for instance state
-        self._state = ModelState()
 
         # There is a rather weird disparity here; if kwargs, it's set, then args
         # overrides it. It should be one or the other; don't duplicate the work

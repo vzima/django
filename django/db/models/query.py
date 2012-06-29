@@ -299,14 +299,9 @@ class QuerySet(object):
                 # Omit aggregates in object creation.
                 row_data = row[index_start:aggregate_start]
                 if skip:
-                    obj = model_cls(**dict(zip(init_list, row_data)))
+                    obj = model_cls.construct(db, False, **dict(zip(init_list, row_data)))
                 else:
-                    obj = model(*row_data)
-
-                # Store the source database of the object
-                obj._state.db = db
-                # This object came from the database; it's not being added.
-                obj._state.adding = False
+                    obj = model.construct(db, False, *row_data)
 
             if extra_select:
                 for i, k in enumerate(extra_select):
@@ -1379,14 +1374,9 @@ def get_cached_row(row, index_start, using,  klass_info, offset=0):
         obj = None
     else:
         if field_names:
-            obj = klass(**dict(zip(field_names, fields)))
+            obj = klass.contruct(db, False, **dict(zip(field_names, fields)))
         else:
-            obj = klass(*fields)
-
-    # If an object was retrieved, set the database state.
-    if obj:
-        obj._state.db = using
-        obj._state.adding = False
+            obj = klass.contruct(db, False, *fields)
 
     # Instantiate related fields
     index_end = index_start + field_count + offset
@@ -1511,16 +1501,13 @@ class RawQuerySet(object):
                 model_init_kwargs = {}
                 for attname, pos in model_init_field_names.iteritems():
                     model_init_kwargs[attname] = values[pos]
-                instance = model_cls(**model_init_kwargs)
+                instance = model_cls.construct(db, False, **model_init_kwargs)
             else:
                 model_init_args = [values[pos] for pos in model_init_field_pos]
-                instance = model_cls(*model_init_args)
+                instance = model_cls(db, False, *model_init_args)
             if annotation_fields:
                 for column, pos in annotation_fields:
                     setattr(instance, column, values[pos])
-
-            instance._state.db = db
-            instance._state.adding = False
 
             yield instance
 
