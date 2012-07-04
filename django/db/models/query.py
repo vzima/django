@@ -299,9 +299,9 @@ class QuerySet(object):
                 # Omit aggregates in object creation.
                 row_data = row[index_start:aggregate_start]
                 if skip:
-                    obj = model_cls.construct(db, False, **dict(zip(init_list, row_data)))
+                    obj = model_cls.construct(db, False, kwargs=dict(zip(init_list, row_data)))
                 else:
-                    obj = model.construct(db, False, *row_data)
+                    obj = model.construct(db, False, args=row_data)
 
             if extra_select:
                 for i, k in enumerate(extra_select):
@@ -1374,9 +1374,9 @@ def get_cached_row(row, index_start, using,  klass_info, offset=0):
         obj = None
     else:
         if field_names:
-            obj = klass.contruct(db, False, **dict(zip(field_names, fields)))
+            obj = klass.construct(db, False, kwargs=dict(zip(field_names, fields)))
         else:
-            obj = klass.contruct(db, False, *fields)
+            obj = klass.construct(db, False, args=fields)
 
     # Instantiate related fields
     index_end = index_start + field_count + offset
@@ -1501,10 +1501,10 @@ class RawQuerySet(object):
                 model_init_kwargs = {}
                 for attname, pos in model_init_field_names.iteritems():
                     model_init_kwargs[attname] = values[pos]
-                instance = model_cls.construct(db, False, **model_init_kwargs)
+                instance = model_cls.construct(db, False, kwargs=model_init_kwargs)
             else:
                 model_init_args = [values[pos] for pos in model_init_field_pos]
-                instance = model_cls(db, False, *model_init_args)
+                instance = model_cls.construct(db, False, args=model_init_args)
             if annotation_fields:
                 for column, pos in annotation_fields:
                     setattr(instance, column, values[pos])

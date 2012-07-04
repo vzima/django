@@ -279,17 +279,19 @@ class Model(object):
     __metaclass__ = ModelBase
     _deferred = False
 
-    def __new__(cls, db=None, adding=True, *args, **kwargs):
-        ret = super(Model, cls).__new__(cls)
-        ret._state = ModelState(db, adding)
-        return ret
-
     @classmethod
-    def construct(cls, db, adding, *args, **kwargs):
-        self = cls.__new__(cls, db, adding, *args, **kwargs)
-        return self.__init__(*args, **kwargs)
+    def construct(cls, db, adding, args=None, kwargs=None):
+        args = args or ()
+        kwargs = kwargs or {}
+        self = cls.__new__(cls, *args, **kwargs)
+        self._state = ModelState(db, adding)
+        self.__init__(*args, **kwargs)
+        return self
 
     def __init__(self, *args, **kwargs):
+        if not hasattr(self, '_state'):
+            self._state = ModelState()
+
         signals.pre_init.send(sender=self.__class__, args=args, kwargs=kwargs)
 
         # Set up the storage for instance state
